@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Media Backup to SSD</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #38b2ac 0%, #319795 100%);
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        }
+
+        .progress-container {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #38a169;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .status.info {
+            background: #bee3f8;
+            color: #2a4365;
+            border-left: 4px solid #3182ce;
+        }
+
+        .status.warning {
+            background: #fef5e7;
+            color: #744210;
+            border-left: 4px solid #ed8936;
+        }
+
+        .file-info {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 5px 0;
+            border-left: 3px solid #667eea;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-info.backed-up {
+            border-left-color: #38a169;
+            background: rgba(200, 246, 213, 0.3);
+        }
+
+        .file-info.new {
+            border-left-color: #ed8936;
+            background: rgba(254, 245, 231, 0.3);
+        }
+
+        .file-status {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .file-status.backed-up {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .file-status.new {
+            background: #fef5e7;
+            color: #744210;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .backup-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #4a5568;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .index-info {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .index-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .index-details {
+            font-size: 0.9rem;
+            color: #4a5568;
+            line-height: 1.5;
+        }
+
+        .toggle-section {
+            margin-top: 15px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .toggle-content.open {
+            max-height: 500px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠💾 Smart Media Backup</h1>
+        
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Backup Index Status
+            </h2>
+            <div id="indexStatus" class="index-info">
+                <div class="index-header">
+                    <strong>📊 Index Information</strong>
+                    <div>
+                        <button class="btn secondary" onclick="loadIndex()">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                            Refresh Index
+                        </button>
+                        <button class="btn danger" onclick="clearIndex()">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                            Clear Index
+                        </button>
+                    </div>
+                </div>
+                <div class="index-details" id="indexDetails">
+                    No index found. Will create new index on first backup.
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
+                </svg>
+                Select Media Files
+            </h2>
+            <input type="file" id="fileInput" multiple accept="image/*,video/*">
+            <button class="btn" onclick="selectFiles()">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
+                </svg>
+                Choose Files
+            </button>
+            <button class="btn" onclick="selectFolder()">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+                </svg>
+                Select Folder
+            </button>
+        </div>
+
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M6 2c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
+                </svg>
+                Backup Destination
+            </h2>
+            <button class="btn" onclick="selectDestination()">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10 2 10 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+                </svg>
+                Choose SSD Location
+            </button>
+            <div id="destinationInfo" class="status info" style="display: none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                </svg>
+                File Analysis
+            </h2>
+            <div class="backup-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalFiles">0</div>
+                    <div class="stat-label">Total Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="newFiles">0</div>
+                    <div class="stat-label">New Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="backedUpFiles">0</div>
+                    <div class="stat-label">Already Backed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalSize">0 MB</div>
+                    <div class="stat-label">New Data Size</div>
+                </div>
+            </div>
+            
+            <div class="toggle-section" onclick="toggleFileList()">
+                <h3 style="cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                    <svg class="icon" id="toggleIcon" viewBox="0 0 24 24">
+                        <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                    File Details
+                </h3>
+            </div>
+            <div class="toggle-content" id="fileListContainer">
+                <div id="fileList"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/>
+                </svg>
+                Smart Backup
+            </h2>
+            <button class="btn" id="backupBtn" onclick="startBackup()" disabled>
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/>
+                </svg>
+                Backup New Files Only
+            </button>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="progressText">Preparing backup...</div>
+            </div>
+        </div>
+
+        <div id="statusContainer"></div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        let destinationHandle = null;
+        let backupIndex = {};
+        let analysisResults = {};
+
+        // File hash generation for change detection
+        async function generateFileHash(file) {
+            const buffer = await file.arrayBuffer();
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Load existing backup index
+        async function loadIndex() {
+            try {
+                if (!destinationHandle) {
+                    showStatus('Please select backup destination first', 'warning');
+                    return;
+                }
+
+                const indexFile = await destinationHandle.getFileHandle('backup_index.json', { create: false });
+                const file = await indexFile.getFile();
+                const text = await file.text();
+                backupIndex = JSON.parse(text);
+                
+                updateIndexDisplay();
+                showStatus('✅ Backup index loaded successfully', 'success');
+                
+                // Re-analyze current files if any are selected
+                if (selectedFiles.length > 0) {
+                    await analyzeFiles();
+                }
+            } catch (error) {
+                if (error.name === 'NotFoundError') {
+                    backupIndex = {
+                        created: new Date().toISOString(),
+                        lastUpdated: new Date().toISOString(),
+                        totalBackups: 0,
+                        files: {}
+                    };
+                    showStatus('📝 No existing index found. Will create new index.', 'info');
+                } else {
+                    console.error('Error loading index:', error);
+                    showStatus('Error loading index: ' + error.message, 'error');
+                }
+                updateIndexDisplay();
+            }
+        }
+
+        // Save backup index
+        async function saveIndex() {
+            try {
+                if (!destinationHandle) return;
+
+                backupIndex.lastUpdated = new Date().toISOString();
+                const indexFile = await destinationHandle.getFileHandle('backup_index.json', { create: true });
+                const writable = await indexFile.createWritable();
+                await writable.write(JSON.stringify(backupIndex, null, 2));
+                await writable.close();
+            } catch (error) {
+                console.error('Error saving index:', error);
+                showStatus('Warning: Could not save index file', 'warning');
+            }
+        }
+
+        // Clear backup index
+        async function clearIndex() {
+            if (confirm('Are you sure you want to clear the backup index? This will reset all backup history.')) {
+                backupIndex = {
+                    created: new Date().toISOString(),
+                    lastUpdated: new Date().toISOString(),
+                    totalBackups: 0,
+                    files: {}
+                };
+                await saveIndex();
+                updateIndexDisplay();
+                showStatus('🗑️ Backup index cleared', 'info');
+                
+                // Re-analyze files
+                if (selectedFiles.length > 0) {
+                    await analyzeFiles();
+                }
+            }
+        }
+
+        // Update index display
+        function updateIndexDisplay() {
+            const indexDetails = document.getElementById('indexDetails');
+            const fileCount = Object.keys(backupIndex.files || {}).length;
+            
+            if (fileCount === 0) {
+                indexDetails.innerHTML = `
+                    <div>📝 <strong>New Index</strong></div>
+                    <div>Created: ${new Date(backupIndex.created).toLocaleString()}</div>
+                    <div>No files backed up yet</div>
+                `;
+            } else {
+                indexDetails.innerHTML = `
+                    <div>📊 <strong>Index Statistics</strong></div>
+                    <div>Created: ${new Date(backupIndex.created).toLocaleDateString()}</div>
+                    <div>Last Updated: ${new Date(backupIndex.lastUpdated).toLocaleString()}</div>
+                    <div>Total Backups: ${backupIndex.totalBackups}</div>
+                    <div>Files Tracked: ${fileCount}</div>
+                `;
+            }
+        }
+
+        // Analyze files against index
+        async function analyzeFiles() {
+            showStatus('🔍 Analyzing files against backup index...', 'info');
+            
+            let newFiles = [];
+            let backedUpFiles = [];
+            let totalNewSize = 0;
+
+            for (let file of selectedFiles) {
+                const fileKey = `${file.name}_${file.size}_${file.lastModified}`;
+                const indexEntry = backupIndex.files[fileKey];
+                
+                if (indexEntry) {
+                    // File exists in index, but let's verify it hasn't changed
+                    const currentHash = await generateFileHash(file);
+                    if (indexEntry.hash === currentHash) {
+                        backedUpFiles.push(file);
+                    } else {
+                        // File changed, treat as new
+                        newFiles.push(file);
+                        totalNewSize += file.size;
+                    }
+                } else {
+                    // New file
+                    newFiles.push(file);
+                    totalNewSize += file.size;
+                }
+            }
+
+            analysisResults = {
+                newFiles,
+                backedUpFiles,
+                totalNewSize
+            };
+
+            updateFileList();
+            updateBackupButton();
+            showStatus(`✅ Analysis complete: ${newFiles.length} new files, ${backedUpFiles.length} already backed up`, 'success');
+        }
+
+        async function selectFiles() {
+            const fileInput = document.getElementById('fileInput');
+            fileInput.click();
+            
+            fileInput.onchange = async function(e) {
+                const files = Array.from(e.target.files);
+                selectedFiles = files.filter(file => 
+                    file.type.startsWith('image/') || file.type.startsWith('video/')
+                );
+                
+                if (selectedFiles.length > 0) {
+                    await analyzeFiles();
+                } else {
+                    updateFileList();
+                    updateBackupButton();
+                }
+            };
+        }
+
+        async function selectFolder() {
+            try {
+                if ('showDirectoryPicker' in window) {
+                    const dirHandle = await window.showDirectoryPicker();
+                    const files = [];
+                    
+                    showStatus('📂 Reading folder contents...', 'info');
+                    
+                    async function processDirectory(dirHandle, path = '') {
+                        for await (const [name, handle] of dirHandle.entries()) {
+                            if (handle.kind === 'file') {
+                                const file = await handle.getFile();
+                                if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                                    files.push(file);
+                                }
+                            } else if (handle.kind === 'directory') {
+                                await processDirectory(handle, path + '/' + name);
+                            }
+                        }
+                    }
+                    
+                    await processDirectory(dirHandle);
+                    selectedFiles = files;
+                    
+                    if (files.length > 0) {
+                        await analyzeFiles();
+                    } else {
+                        showStatus('No media files found in selected folder', 'warning');
+                    }
+                } else {
+                    showStatus('Directory picker not supported. Please use file selection.', 'error');
+                }
+            } catch (error) {
+                console.error('Error selecting folder:', error);
+                showStatus('Error selecting folder: ' + error.message, 'error');
+            }
+        }
+
+        async function selectDestination() {
+            try {
+                if ('showDirectoryPicker' in window) {
+                    destinationHandle = await window.showDirectoryPicker();
+                    const info = document.getElementById('destinationInfo');
+                    info.textContent = `Backup destination: ${destinationHandle.name}`;
+                    info.style.display = 'block';
+                    
+                    // Auto-load index from destination
+                    await loadIndex();
+                    updateBackupButton();
+                } else {
+                    showStatus('Directory picker not supported on this browser', 'error');
+                }
+            } catch (error) {
+                console.error('Error selecting destination:', error);
+                showStatus('Error selecting destination: ' + error.message, 'error');
+            }
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            const totalFiles = document.getElementById('totalFiles');
+            const newFilesEl = document.getElementById('newFiles');
+            const backedUpFilesEl = document.getElementById('backedUpFiles');
+            const totalSize = document.getElementById('totalSize');
+            
+            fileList.innerHTML = '';
+            
+            const { newFiles = [], backedUpFiles = [], totalNewSize = 0 } = analysisResults;
+            
+            // Show backed up files first
+            backedUpFiles.forEach(file => {
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'file-info backed-up';
+                
+                const sizeDisplay = formatFileSize(file.size);
+                
+                fileInfo.innerHTML = `
+                    <div>
+                        <strong>${file.name}</strong><br>
+                        <small>Type: ${file.type} | Size: ${sizeDisplay}</small>
+                    </div>
+                    <span class="file-status backed-up">✓ BACKED UP</span>
+                `;
+                
+                fileList.appendChild(fileInfo);
+            });
+            
+            // Show new files
+            newFiles.forEach(file => {
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'file-info new';
+                
+                const sizeDisplay = formatFileSize(file.size);
+                
+                fileInfo.innerHTML = `
+                    <div>
+                        <strong>${file.name}</strong><br>
+                        <small>Type: ${file.type} | Size: ${sizeDisplay}</small>
+                    </div>
+                    <span class="file-status new">📤 NEW</span>
+                `;
+                
+                fileList.appendChild(fileInfo);
+            });
+            
+            // Update stats
+            totalFiles.textContent = selectedFiles.length;
+            newFilesEl.textContent = newFiles.length;
+            backedUpFilesEl.textContent = backedUpFiles.length;
+            totalSize.textContent = formatFileSize(totalNewSize);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function toggleFileList() {
+            const container = document.getElementById('fileListContainer');
+            const icon = document.getElementById('toggleIcon');
+            
+            if (container.classList.contains('open')) {
+                container.classList.remove('open');
+                icon.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
+            } else {
+                container.classList.add('open');
+                icon.innerHTML = '<path d="M7 14l5-5 5 5z"/>';
+            }
+        }
+
+        function updateBackupButton() {
+            const backupBtn = document.getElementById('backupBtn');
+            const { newFiles = [] } = analysisResults;
+            
+            backupBtn.disabled = newFiles.length === 0 || !destinationHandle;
+            
+            if (newFiles.length === 0 && selectedFiles.length > 0) {
+                backupBtn.textContent = '✓ All Files Already Backed Up';
+            } else {
+                backupBtn.innerHTML = `
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/>
+                    </svg>
+                    Backup ${newFiles.length} New Files
+                `;
+            }
+        }
+
+        async function startBackup() {
+            const { newFiles = [] } = analysisResults;
+            
+            if (newFiles.length === 0 || !destinationHandle) {
+                showStatus('No new files to backup', 'info');
+                return;
+            }
+
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const backupBtn = document.getElementById('backupBtn');
+            
+            progressContainer.style.display = 'block';
+            backupBtn.disabled = true;
+            
+            let completedFiles = 0;
+            let errors = [];
+
+            try {
+                // Create backup folder with timestamp
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+                const backupFolderName = `MediaBackup_${timestamp}`;
+                
+                let backupFolder;
+                try {
+                    backupFolder = await destinationHandle.getDirectoryHandle(backupFolderName, { create: true });
+                } catch (error) {
+                    showStatus('Error creating backup folder: ' + error.message, 'error');
+                    return;
+                }
+
+                for (let i = 0; i < newFiles.length; i++) {
+                    const file = newFiles[i];
+                    progressText.textContent = `Backing up: ${file.name} (${i + 1}/${newFiles.length})`;
+                    
+                    try {
+                        // Generate file hash
+                        const fileHash = await generateFileHash(file);
+                        
+                        // Create file handle in backup folder
+                        const fileHandle = await backupFolder.getFileHandle(file.name, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        
+                        // Write file data
+                        await writable.write(file);
+                        await writable.close();
+                        
+                        // Update index
+                        const fileKey = `${file.name}_${file.size}_${file.lastModified}`;
+                        backupIndex.files[fileKey] = {
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            lastModified: file.lastModified,
+                            hash: fileHash,
+                            backupDate: new Date().toISOString(),
+                            backupLocation: `${backupFolderName}/${file.name}`
+                        };
+                        
+                        completedFiles++;
+                    } catch (error) {
+                        console.error(`Error backing up ${file.name}:`, error);
+                        errors.push(`${file.name}: ${error.message}`);
+                    }
+                    
+                    // Update progress
+                    const progress = ((i + 1) / newFiles.length) * 100;
+                    progressFill.style.width = progress + '%';
+                }
+                
+                // Update backup statistics
+                backupIndex.totalBackups++;
+                await saveIndex();
+                
+                // Re-analyze files to update UI
+                await analyzeFiles();
+                
+                // Show completion status
+                if (errors.length === 0) {
+                    showStatus(`✅ Smart backup completed! ${completedFiles} new files backed up to ${backupFolderName}`, 'success');
+                } else {
+                    showStatus(`⚠️ Backup completed with ${errors.length} errors. ${completedFiles} files backed up successfully.`, 'warning');
+                    console.log('Backup errors:', errors);
+                }
+                
+                progressText.textContent = 'Backup completed!';
+                
+            } catch (error) {
+                console.error('Backup error:', error);
+                showStatus('Backup failed: ' + error.message, 'error');
+            } finally {
+                backupBtn.disabled = false;
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 3000);
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusContainer = document.getElementById('statusContainer');
+            const status = document.createElement('div');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            
+            statusContainer.appendChild(status);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (status.parentNode) {
+                    status.parentNode.removeChild(status);
+                }
+            }, 5000);
+        }
+
+        // Initialize app
+        window.onload = function() {
+            if (!('showDirectoryPicker' in window)) {
+                showStatus('⚠️ This app requires a browser that supports the File System Access API. Please use Chrome, Edge, or another Chromium-based browser.', 'error');
+            } else {
+                showStatus('✅ Smart backup system ready! Select files and destination to begin.', 'success');
+            }
+            
+            // Initialize empty analysis results
+            analysisResults = {
+                newFiles: [],
+                backedUpFiles: [],
+                totalNewSize: 0
+            };
+            
+            updateIndexDisplay();
+            updateFileList();
+            updateBackupButton();
+        };
+    </script>
+</body>
+</html>
